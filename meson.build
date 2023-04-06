@@ -1,13 +1,14 @@
 # This file is part of atkmm.
 
 project('atkmm', 'cpp',
-  version: '2.28.2',
+  version: '2.28.3',
   license: 'LGPLv2.1+',
   default_options: [
-    'cpp_std=c++11'
+    'cpp_std=c++11',
+    'warning_level=1',
   ],
-  meson_version: '>= 0.54.0', # required for meson.override_dependency()
-                              # and dep.get_variable(internal:)
+  meson_version: '>= 0.55.0', # required for meson.add_dist_script(python3, ...)
+                              # and meson.add_install_script(python3, ...)
 )
 
 atkmm_api_version = '1.6'
@@ -44,7 +45,7 @@ project_build_root = meson.current_build_dir()
 
 cpp_compiler = meson.get_compiler('cpp')
 is_msvc = cpp_compiler.get_id() == 'msvc'
-python3 = import('python').find_installation('python3')
+python3 = import('python').find_installation()
 
 python_version = python3.language_version()
 python_version_req = '>= 3.5'
@@ -59,7 +60,7 @@ import os
 import sys
 sys.exit(os.path.isdir("@0@") or os.path.isfile("@0@"))
 '''.format(project_source_root / '.git')
-is_git_build = run_command(python3, '-c', cmd_py).returncode() != 0
+is_git_build = run_command(python3, '-c', cmd_py, check: false).returncode() != 0
 
 # Are we testing a dist tarball while it's being built?
 # There ought to be a better way. https://github.com/mesonbuild/meson/issues/6866
@@ -73,10 +74,12 @@ maintainer_mode = maintainer_mode_opt == 'true' or \
 if is_dist_check
   message('Looks like a tarball is being tested. ' + \
   'Option "dist-warnings" is used instead of "warnings".')
-  warning_level = get_option('dist-warnings')
+  cpp_warnings = get_option('dist-warnings')
 else
-  warning_level = get_option('warnings')
+  cpp_warnings = get_option('warnings')
 endif
+warning_level = get_option('warning_level').to_int()
+werror = get_option('werror')
 build_deprecated_api = get_option('build-deprecated-api')
 build_documentation_opt = get_option('build-documentation')
 build_documentation = build_documentation_opt == 'true' or \
@@ -99,7 +102,7 @@ install_pkgconfigdir = install_libdir / 'pkgconfig'
 glibmm_req = '>= 2.46.2'
 
 # Atk supported pkg-config files on MSVC files for a good while, so just use that
-atk_req = '>= 1.18.0'
+atk_req = '>= 2.12.0'
 atk_dep = dependency('atk', version: atk_req)
 
 # The -mm libraries do not yet have pkg-config files for MSVC builds,
@@ -137,7 +140,6 @@ if maintainer_mode and not mm_common_get.found()
   mm_common_get = find_program('mm-common-get', required: true)
 endif
 m4 = find_program('m4', required: maintainer_mode) # Used by gmmproc (in glibmm)
-perl = find_program('perl', required: maintainer_mode or build_documentation)
 doxygen = find_program('doxygen', required: build_documentation)
 dot = find_program('dot', required: build_documentation) # Used by Doxygen
 xsltproc = find_program('xsltproc', required: build_documentation)
@@ -153,18 +155,35 @@ check_dllexport_usage_py = script_dir / 'check-dllexport-usage.py'
 if maintainer_mode
   # Copy files to untracked/build_scripts and untracked/doc.
   run_command(mm_common_get, '--force', script_dir,
-    project_source_root / 'untracked' / 'doc')
+    project_source_root / 'untracked' / 'doc',
+    check: true,
+  )
 else
   cmd_py = '''
 import os
 import sys
 sys.exit(os.path.isfile("@0@"))
 '''.format(generate_binding_py)
-  file_exists = run_command(python3, '-c', cmd_py).returncode() != 0
+  file_exists = run_command(python3, '-c', cmd_py, check: false).returncode() != 0
   if not file_exists
     error('Missing files in untracked/. You must enable maintainer-mode.')
   endif
 endif
+
+# Check if perl is required and available.
+doc_perl_prop = run_command(
+  python3, doc_reference_py, 'get_script_property',
+  '', # MMDOCTOOLDIR is not used
+  'requires_perl',
+  check: false,
+)
+doc_requires_perl = true
+if doc_perl_prop.returncode() == 0 and doc_perl_prop.stdout() == 'false'
+  doc_requires_perl = false
+endif
+
+perl = find_program('perl', required: maintainer_mode or \
+  (build_documentation and doc_requires_perl))
 
 # atkmm's own script files.
 atkmm_script_dir = project_source_root / 'codegen'
@@ -178,7 +197,6 @@ use_msvc14x_toolset_ver = get_option('msvc14x-parallel-installable')
 msvc14x_toolset_ver = ''
 
 if is_msvc
-  add_project_arguments(cpp_compiler.get_supported_arguments([ '/utf-8', '/wd4828']), language: 'cpp')
 
   # Check for the first line in a file generated with gmmproc,
   # to see which gmmproc version was used
@@ -196,11 +214,13 @@ if is_msvc
 
   # Enable __declspec(dllexport) if the atkmm headers generated from the .hg files
   # were generated using a recent enough gmmproc
-  build_shared_libs_directly = run_command(check_gmmproc_ver_cmd).returncode() == 0
+  build_shared_libs_directly = run_command(check_gmmproc_ver_cmd, check: false).returncode() == 0
   message('Using __declspec(dllexport) to build atkmm: @0@'.format(build_shared_libs_directly ? 'YES' : 'NO'))
 
   if use_msvc14x_toolset_ver
-    if cpp_compiler.version().version_compare('>=19.20')
+    if cpp_compiler.version().version_compare('>=19.30')
+      msvc14x_toolset_ver = '-vc143'
+    elif cpp_compiler.version().version_compare('>=19.20')
       msvc14x_toolset_ver = '-vc142'
     elif cpp_compiler.version().version_compare('>=19.10')
       msvc14x_toolset_ver = '-vc141'
@@ -213,24 +233,25 @@ if is_msvc
 endif
 
 # Set compiler warnings.
+# Meson warns if any of the /W1, /W2, /W3, /W4, /Wall, -Wall, -Wextra, -Werror
+# compiler options are added with add_project_arguments().
+# Avoid such warnings, when possible.
+# See _warn_about_builtin_args() in meson/mesonbuild/interpreter/interpreter.py.
 warning_flags = []
-if warning_level == 'min'
-  if is_msvc
-    warning_flags = ['/W3']
-  else
-    warning_flags = ['-Wall']
+if cpp_warnings == 'min'
+  if warning_level == 0
+    warning_flags = is_msvc ? ['/W2'] : ['-Wall']
   endif
-elif warning_level == 'max' or warning_level == 'fatal'
-  if is_msvc
-    warning_flags = ['/W4']
-  else
-    warning_flags = '-pedantic -Wall -Wextra -Wformat-security -Wsuggest-override -Wshadow -Wno-long-long'.split()
+elif cpp_warnings == 'max' or cpp_warnings == 'fatal'
+  if warning_level < 3
+    warning_flags = is_msvc ? ['/W4'] : ['-pedantic', '-Wall', '-Wextra']
   endif
-  if warning_level == 'fatal'
-    if is_msvc
-      warning_flags += ['/WX']
-    else
-      warning_flags += ['-Werror']
+  if not is_msvc
+    warning_flags += '-Wformat-security -Wsuggest-override -Wshadow -Wno-long-long'.split()
+  endif
+  if cpp_warnings == 'fatal'
+    if not werror
+      warning_flags += is_msvc ? ['/WX'] : ['-Werror']
     endif
     deprecations = 'G ATK GLIBMM SIGCXX'.split()
     foreach d : deprecations
@@ -245,10 +266,20 @@ add_project_arguments(warning_flags, language: 'cpp')
 # MSVC: Ignore warnings that aren't really harmful, but make those
 #       that should not be overlooked stand out.
 if is_msvc
-  foreach wd : ['/FImsvc_recommended_pragmas.h', '/wd4267', '/EHsc']
-    disabled_warning = cpp_compiler.get_supported_arguments(wd)
-    add_project_arguments(disabled_warning, language: 'cpp')
-  endforeach
+  disable_warnings_list = [
+    '/FImsvc_recommended_pragmas.h', # Turn off harmless warnings but make potentially
+                                     # dangerous ones glaring, distributed with GLib
+    '/EHsc',  # avoid warnings caused by exception handling model used
+    '/utf-8', # Avoid C4819 unicode conversion warnings when building on CJK locales
+  ]
+  if host_machine.cpu_family() == 'x86_64' or host_machine.cpu_family() == 'aarch64'
+    # 'var' : conversion from 'size_t' to 'type', possible loss of data (applies on 64-bit builds)
+    disable_warnings_list += '/wd4267'
+  endif
+  add_project_arguments(
+    cpp_compiler.get_supported_arguments(disable_warnings_list),
+    language: 'cpp'
+  )
 endif
 
 # add_dist_script() is not allowed in a subproject if meson.version() < 0.58.0.
@@ -264,13 +295,13 @@ subdir('doc/reference')
 if can_add_dist_script
   # Add a ChangeLog file to the distribution directory.
   meson.add_dist_script(
-    python3.path(), dist_changelog_py,
+    python3, dist_changelog_py,
     project_source_root,
   )
   # Add build scripts to the distribution directory, and delete .gitignore
   # files and an empty $MESON_PROJECT_DIST_ROOT/build/ directory.
   meson.add_dist_script(
-    python3.path(), dist_build_scripts_py,
+    python3, dist_build_scripts_py,
     project_source_root,
     'untracked' / 'build_scripts',
   )
@@ -313,7 +344,8 @@ summary = [
   meson.project_name() + ' ' + meson.project_version(),
   '',
   '         Maintainer mode: @0@@1@'.format(maintainer_mode_opt, real_maintainer_mode),
-  '       Compiler warnings: @0@'.format(warning_level),
+  '       Compiler warnings: @0@ (warning_level: @1@, werror: @2@)'. \
+                             format(cpp_warnings, warning_level, werror),
   '    Build deprecated API: @0@'.format(build_deprecated_api),
   'Build HTML documentation: @0@@1@'.format(build_documentation_opt, real_build_documentation),
   'Directories:',

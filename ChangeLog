@@ -1,3 +1,91 @@
+2022-07-20  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  2.28.3
+
+2022-07-20  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  README.md: Add another link to jhbuild
+
+2022-07-20  Doomsdayrs  <doomsdayrs@gmail.com>
+
+  Convert README to MD
+
+  Merge request !9
+
+2022-07-07  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  codegen/generate_defs_and_docs.sh: Atk has moved to at-spi2-core
+
+  Atk has been merged with at-spi2-core. Read atk files from there.
+
+2022-05-24  Chun-wei Fan  <fanchunwei@src.gnome.org>
+
+  Meson: Re-organize warnings-related compiler flags for MSVC
+
+  Add a short description for each of the warning-related compiler flags that are
+  used globally, and only apply '/wd4267' for 64-bit builds, since that flag is
+  really only applicable when building for 64-bit.
+
+2022-05-23  Chun-wei Fan  <fanchunwei@src.gnome.org>
+
+  Meson: Apply '/wd4828' only for gendef.exe
+
+  ... as the warning only applies to gendef.cc, and only apply that if we need to
+  build gendef.exe (the gmmproc from glibmm is too old to generate the headers
+  that can export symbols without needing to use gendef.exe).
+  
+  Move the '/utf-8' flag check to be with the other warning-related compiler
+  flags.
+
+2022-05-16  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  Require atk >= 2.12.0
+
+  Atkmm has required atk >= 2.12.0 (the first release with AtkRange)
+  for a long time, but it has not been properly specified in
+  configure.ac and meson.build.
+
+2022-05-15  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Avoid configuration warnings
+
+2022-02-27  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Check if Perl is required for building documentation
+
+  New versions of mm-common use the Python scripts doc_postprocess.py
+  and doc_install.py instead of the Perl scripts doc-postprocess.pl and
+  doc-install.pl when documentation is built.
+
+2022-02-12  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Specify 'check' option in run_command(), part 2
+
+  Forgot one run_command() in the first part.
+  
+  Let import('python').find_installation() always find the python
+  installation used to run Meson.
+
+2022-02-06  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Don't use deprecated python3.path()
+
+2022-02-05  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Specify 'check' option in run_command()
+
+  The default value will be changed in future Meson releases.
+
+2021-12-22  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  atkmm.h: Atkmm is used by gtkmm-3.0, not by gtkmm-4.0
+
+2021-11-10  Chun-wei Fan  <fanchunwei@src.gnome.org>
+
+  build: Support Visual Studio 2022
+
+  Make these builds distinct from the VS2019 builds.
+
 2021-05-21  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
 
   2.28.2
