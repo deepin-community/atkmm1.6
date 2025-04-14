@@ -1,6 +1,37 @@
 # atkmm
 atkmm is the C++ binding for the ATK library.
-This module is part of the GNOME C++ bindings effort <http://www.gtkmm.org/>.
+This module is part of the GNOME C++ bindings effort.
+
+# General information
+
+atkmm-1.6 and atkmm-2.36 are different parallel-installable ABIs.
+This file describes atkmm-1.6.
+
+Web site
+ - https://www.gtkmm.org
+
+Download location
+ - https://download.gnome.org/sources/atkmm
+
+Reference documentation
+ - https://developer-old.gnome.org/atkmm/2.28/
+
+This reference documentation does not document the latest release. If you want
+newer documentation, download a tarball. Tarballs contain reference documentation.
+In tarballs generated with Meson, see the untracked/doc/reference/html directory.
+
+Discussion on GNOME's discourse forum
+ - https://discourse.gnome.org/tag/cplusplus
+ - https://discourse.gnome.org/c/platform
+
+Git repository
+ - https://gitlab.gnome.org/GNOME/atkmm
+
+Bugs can be reported to
+ - https://gitlab.gnome.org/GNOME/atkmm/issues
+
+Patches can be submitted to
+ - https://gitlab.gnome.org/GNOME/atkmm/merge_requests
 
 # Building
 
@@ -9,7 +40,7 @@ supplier of your operating system, such as your Linux distribution.
 
 ## Building on Windows
 
-See README.win32
+See [README.win32](README.win32.md)
 
 ## Building from a release tarball
 
@@ -32,7 +63,7 @@ of untracked/.
 Don't call the builddir 'build'. There is a directory called 'build' with
 files used by Autotools.
 ```
-  $ meson --prefix /some_directory --libdir lib your_builddir .
+  $ meson setup --prefix /some_directory --libdir lib your_builddir .
   $ cd your_builddir
 ```
 If the tarball was made with Autotools, you must enable maintainer-mode:
@@ -77,7 +108,7 @@ Maintainer-mode is enabled by default when you build from a git clone.
 Don't call the builddir 'build'. There is a directory called 'build' with
 files used by Autotools.
 ```
-  $ meson --prefix /some_directory --libdir lib your_builddir .
+  $ meson setup --prefix /some_directory --libdir lib your_builddir .
   $ cd your_builddir
   $ ninja
   $ ninja install
