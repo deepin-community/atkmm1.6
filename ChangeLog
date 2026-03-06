@@ -1,3 +1,71 @@
+2024-01-27  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  2.28.4
+
+2023-12-11  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Don't fail if warning_level=everything
+
+2023-07-11  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  Update atkmm.doap
+
+2023-07-11  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  Remove AUTHORS and add general information to README.md
+
+  See gtkmm#140
+
+2023-07-11  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  Doxyfile.in: Remove obsolete entries
+
+2023-06-29  Chun-wei Fan  <fanchunwei@src.gnome.org>
+
+  Win32: Add build documentation
+
+  Surprisingly, there isn't a build documentation for Windows builds, so let's
+  add one, especially for the sake of those that will be building and using
+  gtkmm-2.x/3.x.
+
+2023-04-28  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  atk/atkmm.h: Update link to ATK
+
+2023-04-28  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  README.md: meson -> meson setup
+
+2023-02-06  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Simplify if-file-exists test
+
+2023-01-04  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Simplify lookup of python command
+
+  See libsigcplusplus PR#83
+
+2023-01-04  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Fix the evaluation of is_git_build on Windows
+
+  See gtkmm#131
+
+2023-01-04  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  Meson build: Don't copy files with configure_file()
+
+  It's deprecated from Meson 0.64. The replacement, fs.copyfile(),
+  is not useful here. It only copies from the source directory to
+  the build directory.
+
+2022-09-27  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
+
+  meson.build: Detect if we build from a git subtree
+
+  See gtkmm!72 (William Roy)
+
 2022-07-20  Kjell Ahlstedt  <kjellahlstedt@gmail.com>
 
   2.28.3
